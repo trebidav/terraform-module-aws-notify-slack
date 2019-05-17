@@ -16,22 +16,19 @@ def decrypt(encrypted_url):
 
 
 def cloudwatch_notification(message, region):
-    states = {'OK': 'good', 'INSUFFICIENT_DATA': 'warning', 'ALARM': 'danger'}
+    states = {
+        'OK': ['good', ':white_check_mark:'],
+        'INSUFFICIENT_DATA': ['warning', ':warning:'],
+        'ALARM': ['danger', ':exclamation:'],
+    }
+    link = "https://console.aws.amazon.com/cloudwatch/home?region=" + region + "#alarm:alarmFilter=ANY;name=" + urllib.parse.quote_plus(message['AlarmName'])
 
     return {
-            "color": states[message['NewStateValue']],
-            "fallback": "Alarm {} triggered".format(message['AlarmName']),
+            "color": states[message['NewStateValue']][0],
+            "fallback": "{} is {}!".format(message['AlarmName'], message['NewStateValue']),
             "fields": [
-                { "title": "Alarm Name", "value": message['AlarmName'], "short": True },
-                { "title": "Alarm Description", "value": message['AlarmDescription'], "short": False},
+                { "value": "{} *[{}]* <{}|{}> in *{}*".format(states[message['NewStateValue']][1], message['NewStateValue'], link, message['AlarmName'], region), "short": False},
                 { "title": "Alarm reason", "value": message['NewStateReason'], "short": False},
-                { "title": "Old State", "value": message['OldStateValue'], "short": True },
-                { "title": "Current State", "value": message['NewStateValue'], "short": True },
-                {
-                    "title": "Link to Alarm",
-                    "value": "https://console.aws.amazon.com/cloudwatch/home?region=" + region + "#alarm:alarmFilter=ANY;name=" + urllib.parse.quote_plus(message['AlarmName']),
-                    "short": False
-                }
             ]
         }
 
@@ -66,7 +63,6 @@ def notify_slack(subject, message, region):
             logging.exception(f'JSON decode error: {err}')
     if "AlarmName" in message:
         notification = cloudwatch_notification(message, region)
-        payload['text'] = "AWS CloudWatch notification - " + message["AlarmName"]
         payload['attachments'].append(notification)
     else:
         payload['text'] = "AWS notification"
