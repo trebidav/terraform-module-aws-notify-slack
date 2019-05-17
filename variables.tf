@@ -20,6 +20,11 @@ variable "lambda_function_name" {
 
 variable "sns_topic_name" {
   description = "The name of the SNS topic to create"
+  default     = ""
+}
+
+variable "sns_topic_arn" {
+  default = ""
 }
 
 variable "slack_webhook_url" {

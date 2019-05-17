@@ -25,7 +25,7 @@ def cloudwatch_notification(message, region):
 
     return {
             "color": states[message['NewStateValue']][0],
-            "fallback": "{} is {}!".format(message['AlarmName'], message['NewStateValue']),
+            "fallback": "[{}] {} in {}".format(message['NewStateValue'], message['AlarmName'], region),
             "fields": [
                 { "value": "{} *[{}]* <{}|{}> in *{}*".format(states[message['NewStateValue']][1], message['NewStateValue'], link, message['AlarmName'], region), "short": False},
                 { "title": "Alarm reason", "value": message['NewStateReason'], "short": False},
