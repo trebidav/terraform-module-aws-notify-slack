@@ -6,7 +6,7 @@ Start by setting up an [incoming webhook integration](https://my.slack.com/servi
 
 ## Features
 
-- [x] AWS Lambda runtime Python 3.6
+- [x] AWS Lambda runtime Python 3.8
 - [x] Create new SNS topic or use existing one
 - [x] Support plaintext and encrypted version of Slack webhook URL
 - [x] Most of Slack message options are customizable
