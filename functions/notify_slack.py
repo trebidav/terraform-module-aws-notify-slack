@@ -47,6 +47,117 @@ def cloudwatch_notification(message, region):
     }
 
 
+def codepipeline_approval(message):
+    """Uses Slack's Block Kit."""
+    console_link = message['consoleLink']
+    approval = message['approval']
+    pipeline_name = approval['pipelineName']
+    action_name = approval['actionName']
+    approval_review_link = approval['approvalReviewLink']
+    expires = approval['expires']
+
+    return {
+        {
+            'type': 'section',
+            'text': {
+                'type': 'plain_text',
+                'text': f'Pipeline "{pipeline_name}" is waiting for approval.',
+            },
+            'accessory': {
+                'type': 'button',
+                'text': {
+                    'type': 'plain_text',
+                    'text': 'Open in :aws: Console',
+                    'emoji': True,
+                },
+                'url': console_link,
+            },
+        },
+        {
+            'type': 'section',
+            'fields': [
+                {
+                    'type': 'mrkdwn',
+                    'text': f'*Action name*:\n{action_name}',
+                },
+                {
+                    'type': 'mrkdwn',
+                    'text': f'*Expires:* {expires}',
+                },
+            ],
+        },
+        {
+            'type': 'actions',
+            'elements': [
+                {
+                    'type': 'button',
+                    'text': {
+                        'type': 'plain_text',
+                        'emoji': False,
+                        'text': 'Review approve',
+                    },
+                    'style': 'primary',
+                    'url': approval_review_link,
+                },
+            ],
+        },
+    }
+
+
+def codepipeline_detail(message):
+    """Uses Slack's Block Kit."""
+    def get_emoji(state):
+        states = {
+            'CANCELLED': ':x:',
+            'FAILED': ':exclamation:',
+            'RESUMED': ':recycle:',
+            'STARTED': ':information_source:',
+            'SUCCEEDED': ':heavy_check_mark:',
+            'SUPERSEDED': ':heavy_minus_sign:',
+        }
+        emoji = states.get(state)
+        return f'{emoji} ' if emoji is not None else ''
+
+    time = message['time']
+    detail = message['detail']
+    pipeline = detail['pipeline']
+    execution_id = detail['execution-id']
+    state = detail['state']
+
+    return {
+        {
+            'type': 'section',
+            'text': {
+                'type': 'plain_text',
+                'emoji': True,
+                'text': f'{get_emoji(state)}{state.capitalize()} pipeline "{pipeline}".',
+            },
+        },
+        {
+            'type': 'section',
+            'fields': [
+                {
+                    'type': 'mrkdwn',
+                    'text': f'*State:*\n{state}',
+                },
+                {
+                    'type': 'mrkdwn',
+                    'text': f'*Execution ID:*\n`{execution_id}`',
+                },
+            ],
+        },
+        {
+            'type': 'context',
+            'elements': [
+                {
+                    'type': 'mrkdwn',
+                    'text': f'*Timestamp:* {time}',
+                },
+            ],
+        },
+    }
+
+
 def default_notification(subject, message):
     return {
         'fallback': 'A new message',
@@ -66,6 +177,7 @@ def notify_slack(subject, message, region):
 
     payload = {
         'attachments': [],
+        'blocks': [],
         'channel': slack_channel,
         'icon_emoji': slack_emoji,
         'username': slack_username,
@@ -78,6 +190,13 @@ def notify_slack(subject, message, region):
     if 'AlarmName' in message:
         notification = cloudwatch_notification(message, region)
         payload['attachments'].append(notification)
+    elif 'source' in message and message['source'] == 'aws.codepipeline':
+        if 'approval' in message:
+            notification = codepipeline_approval(message)
+            payload['blocks'].append(notification)
+        if 'detail' in message:
+            notification = codepipeline_detail(message)
+            payload['blocks'].append(notification)
     else:
         payload['text'] = 'AWS notification'
         payload['attachments'].append(default_notification(subject, message))
