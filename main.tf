@@ -1,17 +1,5 @@
-data "aws_sns_topic" "this" {
-  count = "${(1 - var.create_sns_topic) * var.create}"
-
-  name = "${var.sns_topic_name}"
-}
-
-resource "aws_sns_topic" "this" {
-  count = "${var.create_sns_topic * var.create}"
-
-  name = "${var.sns_topic_name}"
-}
-
 locals {
-  sns_topic_arn = "${element(concat(aws_sns_topic.this.*.arn, data.aws_sns_topic.this.*.arn, list("")), 0)}"
+  sns_topic_arn = "${var.sns_topic_arn}"
 }
 
 resource "aws_sns_topic_subscription" "sns_notify_slack" {
@@ -62,7 +50,7 @@ resource "aws_lambda_function" "notify_slack" {
   role             = "${aws_iam_role.lambda.arn}"
   handler          = "notify_slack.lambda_handler"
   source_code_hash = "${data.archive_file.notify_slack.0.output_base64sha256}"
-  runtime          = "python3.6"
+  runtime          = "python3.8"
   timeout          = 30
   kms_key_arn      = "${var.kms_key_arn}"
 
@@ -72,6 +60,7 @@ resource "aws_lambda_function" "notify_slack" {
       SLACK_CHANNEL     = "${var.slack_channel}"
       SLACK_USERNAME    = "${var.slack_username}"
       SLACK_EMOJI       = "${var.slack_emoji}"
+      SERVICE           = "${var.service}"
     }
   }
 
