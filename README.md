@@ -25,6 +25,8 @@ module "notify_slack" {
   slack_webhook_url = "https://hooks.slack.com/services/AAA/BBB/CCC"
   slack_channel     = "aws-notification"
   slack_username    = "reporter"
+
+  service = "codepipeline"
 }
 ```
 
@@ -54,6 +56,7 @@ If you want to subscribe AWS Lambda Function created by this module to an existi
 | slack_username | The username that will appear on Slack messages | string | - | yes |
 | slack_webhook_url | The URL of Slack webhook | string | - | yes |
 | sns_topic_name | The name of the SNS topic to create | string | - | yes |
+| service | The name of the service that Lambda will receive messages from | string | - | yes |
 
 ## Outputs
 
