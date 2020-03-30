@@ -183,6 +183,9 @@ def handle_cloudwatch(event, payload):
 
 
 def handle_codepipeline(event, payload):
+    if isinstance(event, str):
+        event = json.loads(event)
+
     if 'approval' in event:
         notification = codepipeline_approval(event)
         payload['blocks'] = notification
@@ -210,16 +213,24 @@ def lambda_handler(event, context):
         'username': slack_username,
     }
 
-    if type(event) is str:
+    if isinstance(event, str):
         try:
             event = json.loads(event)
         except json.JSONDecodeError as ex:
             logging.exception(f'JSON decode error: {ex}')
 
-    if service == 'codepipeline':
-        payload = handle_codepipeline(event, payload)
+    events = []
+    if 'Records' in event:
+        for ev in event['Records']:
+            events.append(ev['Sns']['Message'])
     else:
-        payload = handle_cloudwatch(event, payload)
+        events.append(event)
+
+    for ev in events:
+        if service == 'codepipeline':
+            payload = handle_codepipeline(ev, payload)
+        else:
+            payload = handle_cloudwatch(ev, payload)
 
     data = urllib.parse.urlencode({'payload': json.dumps(payload)}).encode('utf-8')
     req = urllib.request.Request(slack_url)
