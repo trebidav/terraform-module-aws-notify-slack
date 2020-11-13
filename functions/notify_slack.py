@@ -8,6 +8,9 @@ import urllib.request
 import boto3
 
 
+logger = logging.getLogger(__name__)
+
+
 # Decrypt encrypted URL with KMS
 def decrypt(encrypted_url):
     region = os.environ['AWS_REGION']
@@ -15,8 +18,8 @@ def decrypt(encrypted_url):
         kms = boto3.client('kms', region_name=region)
         plaintext = kms.decrypt(CiphertextBlob=base64.b64decode(encrypted_url))['Plaintext']
         return plaintext.decode()
-    except Exception:
-        logging.exception('Failed to decrypt URL with KMS')
+    except Exception as ex:  # pylint:disable=W0703
+        logger.exception('Failed to decrypt URL with KMS: %s', ex)
 
 
 def cloudwatch_notification(message, region):
@@ -217,7 +220,7 @@ def lambda_handler(event, context):
         try:
             event = json.loads(event)
         except json.JSONDecodeError as ex:
-            logging.exception(f'JSON decode error: {ex}')
+            logger.exception('JSON decode error: %s', ex)
 
     events = []
     if 'Records' in event:
