@@ -59,52 +59,55 @@ def codepipeline_approval(message):
     approval_review_link = approval['approvalReviewLink']
     expires = approval['expires']
 
-    return (
-        {
-            'type': 'section',
-            'text': {
-                'type': 'plain_text',
-                'text': f'Pipeline "{pipeline_name}" is waiting for approval.',
-            },
-            'accessory': {
-                'type': 'button',
+    return {
+        'color': '#FFC800',
+        'blocks': (
+            {
+                'type': 'section',
                 'text': {
                     'type': 'plain_text',
-                    'text': 'Open in :aws: Console',
-                    'emoji': True,
+                    'text': f'Pipeline "{pipeline_name}" is waiting for approval.',
                 },
-                'url': console_link,
-            },
-        },
-        {
-            'type': 'section',
-            'fields': [
-                {
-                    'type': 'mrkdwn',
-                    'text': f'*Action name*:\n{action_name}',
-                },
-                {
-                    'type': 'mrkdwn',
-                    'text': f'*Expires:* {expires}',
-                },
-            ],
-        },
-        {
-            'type': 'actions',
-            'elements': [
-                {
+                'accessory': {
                     'type': 'button',
                     'text': {
                         'type': 'plain_text',
-                        'emoji': False,
-                        'text': 'Review approve',
+                        'text': 'Open in :aws: Console',
+                        'emoji': True,
                     },
-                    'style': 'primary',
-                    'url': approval_review_link,
+                    'url': console_link,
                 },
-            ],
-        },
-    )
+            },
+            {
+                'type': 'section',
+                'fields': [
+                    {
+                        'type': 'mrkdwn',
+                        'text': f'*Action name*:\n{action_name}',
+                    },
+                    {
+                        'type': 'mrkdwn',
+                        'text': f'*Expires:* {expires}',
+                    },
+                ],
+            },
+            {
+                'type': 'actions',
+                'elements': [
+                    {
+                        'type': 'button',
+                        'text': {
+                            'type': 'plain_text',
+                            'emoji': False,
+                            'text': 'Review approve',
+                        },
+                        'style': 'primary',
+                        'url': approval_review_link,
+                    },
+                ],
+            },
+        )
+    }
 
 
 def codepipeline_detail(message):
@@ -191,10 +194,11 @@ def handle_codepipeline(event, payload):
 
     if 'approval' in event:
         notification = codepipeline_approval(event)
-        payload['blocks'] = notification
+        payload['attachments'].append(notification)
     if 'detail' in event:
         notification = codepipeline_detail(event)
         payload['attachments'].append(notification)
+
     return payload
 
 
